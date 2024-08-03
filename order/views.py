@@ -8,14 +8,18 @@ from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
 from rest_framework.decorators import permission_classes
 from product.models import Product
-
+from django.core.cache import cache
+from django.conf import settings
+from django.core.cache.backends.base import DEFAULT_TIMEOUT
 # Create your views here.
+CACHE_TTL = getattr(settings, 'CACHE_TTL', DEFAULT_TIMEOUT)
 
 @permission_classes([IsAuthenticated])
 @api_view(['GET'])
 def get_orders(request):
   orders = Order.objects.all()
   serilzer = OrderSerializer(orders,many=True)
+  print('Data form DB')
   return Response({
     'orders':serilzer.data
   })
@@ -23,8 +27,15 @@ def get_orders(request):
 @permission_classes([IsAuthenticated])
 @api_view(['GET'])
 def get_order(request,pk):
-  order = get_object_or_404(Order,pk=pk)
+  order_cache = cache.get(pk)
+  if order_cache :
+     order = order_cache
+  else :   
+    order = get_object_or_404(Order, pk=pk)
+    cache.set(pk, order, CACHE_TTL)
+
   serilzer = OrderSerializer(order,many=False)
+
   return Response({
     'order' : serilzer.data
   })

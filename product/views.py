@@ -10,10 +10,13 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
 from rest_framework.decorators import permission_classes
 from django.db.models import Avg
-
-
-
+from django.core.cache import cache
+from django.conf import settings
+from django.core.cache.backends.base import DEFAULT_TIMEOUT
 # Create your views here.
+
+# Get timeout from settings if exsists
+CACHE_TTL = getattr(settings, 'CACHE_TTL', DEFAULT_TIMEOUT)
 
 
 @api_view(['GET'])
@@ -25,6 +28,7 @@ def get_all_products(request):
     paginator.page_size = respage
     queyrset =  paginator.paginate_queryset(filiterset.qs,request)
     serlizer =  ProductSerializer(queyrset,many=True) 
+    print('Data from DB')
     return Response(
                     {
                      "products":serlizer.data,
@@ -35,14 +39,19 @@ def get_all_products(request):
 
 @api_view(['GET'])
 def get_product_by_id(request, pk):
-    products = get_object_or_404(Product, id=pk)
-    serlizer =  ProductSerializer(products, many=False)  
+    product_cache = cache.get(pk)
+    if product_cache:
+        product = product_cache
+    else:
+        product = get_object_or_404(Product, id=pk)
+        cache.set(pk, product, CACHE_TTL)
+    
+    serializer = ProductSerializer(product)
+    
+    return Response({
+        "product": serializer.data
+    })
 
-    return Response(
-            { 
-            "product":serlizer.data
-            }
-        )
  
 @api_view(['POST'])
 @permission_classes([IsAuthenticated,IsAdminUser])
