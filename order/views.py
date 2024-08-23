@@ -14,31 +14,33 @@ from django.core.cache.backends.base import DEFAULT_TIMEOUT
 # Create your views here.
 CACHE_TTL = getattr(settings, 'CACHE_TTL', DEFAULT_TIMEOUT)
 
+
+
 @permission_classes([IsAuthenticated])
 @api_view(['GET'])
 def get_orders(request):
-  orders = Order.objects.all()
-  serilzer = OrderSerializer(orders,many=True)
-  print('Data form DB')
-  return Response({
-    'orders':serilzer.data
-  })
+    orders = Order.objects.all()
+    serilzer = OrderSerializer(orders,many=True)
+    print('Data form DB')
+    return Response({
+        'orders':serilzer.data
+    })
 
 @permission_classes([IsAuthenticated])
 @api_view(['GET'])
 def get_order(request,pk):
-  order_cache = cache.get(pk)
-  if order_cache :
-     order = order_cache
-  else :   
-    order = get_object_or_404(Order, pk=pk)
-    cache.set(pk, order, CACHE_TTL)
+    order_cache = cache.get(pk)
+    if order_cache :
+        order = order_cache
+    else :   
+        order = get_object_or_404(Order, pk=pk)
+        cache.set(pk, order, CACHE_TTL)
 
-  serilzer = OrderSerializer(order,many=False)
+    serilzer = OrderSerializer(order,many=False)
 
-  return Response({
-    'order' : serilzer.data
-  })
+    return Response({
+        'order' : serilzer.data
+    })
 
 
 @api_view(['DELETE'])
@@ -65,35 +67,35 @@ def process_order(request,pk):
 @permission_classes([IsAuthenticated])
 @api_view(['POST'])
 def create_order(request):
-  user = request.user
-  data = request.data
-  order_itmes = data['order_itmes'] 
+    user = request.user
+    data = request.data
+    order_itmes = data['order_itmes'] 
 
-  # If user  sent empty order 
-  if order_itmes and len(order_itmes) == 0:
-    return Response({'error': 'No order recieved'},status=status.HTTP_400_BAD_REQUEST)
-  # Calculate total
-  total = sum(item['price']*item['quantity'] for item in order_itmes )
+    # If user  sent empty order 
+    if order_itmes and len(order_itmes) == 0:
+        return Response({'error': 'No order recieved'},status=status.HTTP_400_BAD_REQUEST)
+    # Calculate total
+    total = sum(item['price']*item['quantity'] for item in order_itmes )
 
-  order = Order.objects.create(
-      user = user,
-      city = data['city'],
-      zip_code = data['zip_code'],
-      street = data['street'],
-      phone = data['phone'],
-      country = data['country'],
-      total = total,
-  )
-  for i in order_itmes:
-    product = Product.objects.get(id=i['product'])
-    item = OrderItem.objects.create(
-        product= product,
-        order = order,
-        name = product.name,
-        quantity = i['quantity'],
-        price = i['price']
+    order = Order.objects.create(
+        user = user,
+        city = data['city'],
+        zip_code = data['zip_code'],
+        street = data['street'],
+        phone = data['phone'],
+        country = data['country'],
+        total = total,
     )
-    product.stock -= item.quantity
-    product.save()
-    serializer = OrderSerializer(order,many=False)
-    return Response(serializer.data)
+    for i in order_itmes:
+        product = Product.objects.get(id=i['product'])
+        item = OrderItem.objects.create(
+            product= product,
+            order = order,
+            name = product.name,
+            quantity = i['quantity'],
+            price = i['price']
+        )
+        product.stock -= item.quantity
+        product.save()
+        serializer = OrderSerializer(order,many=False)
+        return Response(serializer.data)

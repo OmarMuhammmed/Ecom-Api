@@ -1,6 +1,6 @@
 from django.db import models
 from operator import mod    
-from django.contrib.auth.models import User
+from account.models import CustomUser as User
 
 from product.models import Product 
 
