@@ -12,7 +12,7 @@ from django.core.mail import send_mail
 from project import settings
 # Create your views here.
 
-# Done 
+
 @api_view(['POST'])
 def signup(request):
     data = request.data
@@ -38,14 +38,14 @@ def signup(request):
     else:
         return Response(user.errors)
 
-# Done 
+
 @api_view(['GET'])  
 @permission_classes([IsAuthenticated])
 def current_user(request):
     user = UserSerializer(request.user,many=False)
     return Response(user.data)
 
-# Done 
+ 
 @api_view(['PUT'])  
 @permission_classes([IsAuthenticated])
 def update_user(request):
@@ -66,7 +66,7 @@ def update_user(request):
                 
     return Response(serializer.data)  
 
-# Done 
+
 def get_current_host(request):
     protocol = request.is_secure() and 'https' or 'http' # protocol is secure or not 
     host = request.get_host()
@@ -74,18 +74,19 @@ def get_current_host(request):
     return "{protocol}://{host}/".format(protocol=protocol, host=host)
 
 
-
+ 
 @api_view(['POST'])
 def forgot_password(request):
    data = request.data 
-   user = get_object_or_404(User,email=data['email'])
-   token = get_random_string(40)
+   user = get_object_or_404(User,user_name=data['user_name'])
 
+   # genarate a token 
+   token = get_random_string(40)
    # set the token validity period to 30 minutes from now.
    expire_data = datetime.now() + timedelta(minutes=30)
    
    # save token,expire_data in profile 
-   user.profile.reset_password_token = token
+   user.profile.reset_password_token = token # relatedname = 'profile'
    user.profile.reset_password_expire = expire_data
    user.profile.save()
    
@@ -102,6 +103,7 @@ def forgot_password(request):
    return Response({'details':'password reset sent to {email}'.format(email=data['email'])})
 
 
+ 
 @api_view(['POST'])
 def reset_password(request,token):
    data = request.data 
