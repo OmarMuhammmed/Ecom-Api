@@ -1,7 +1,6 @@
 from django.db import models
 from operator import mod    
 from account.models import CustomUser as User
-
 from product.models import Product 
 
 

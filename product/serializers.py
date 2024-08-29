@@ -13,6 +13,7 @@ class ProductSerializer(serializers.ModelSerializer) :
        reviews = obj.reviews.all()  
        serializer = ReviewSerializer(reviews,many=True)
        return serializer.data 
+    
         
 class ReviewSerializer(serializers.ModelSerializer) :
     class Meta :

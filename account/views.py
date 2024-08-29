@@ -15,28 +15,14 @@ from project import settings
 
 @api_view(['POST'])
 def signup(request):
-    data = request.data
-    user = SingUpSerializer(data = data) 
-    if user.is_valid():
-        if not User.objects.filter(user_name=data['user_name']).exists():
-            user = User.objects.create(
-                first_name = data['first_name'],
-                last_name = data['last_name'], 
-                email = data['email'] , 
-                user_name = data['user_name'] , 
-                password = make_password(data['password']),
-            )
-            return Response(
-                {'details':'Your account registered susccessfully!' },
-                    status=status.HTTP_201_CREATED # apear in postman
-                    )
-        else:
-            return Response(
-                {'eroor':'This email already exists!' },
-                    status=status.HTTP_400_BAD_REQUEST
-                    )
-    else:
-        return Response(user.errors)
+    serializer = SingUpSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(
+            {'details': 'Your account registered successfully!'},
+            status=status.HTTP_201_CREATED
+        )
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])  

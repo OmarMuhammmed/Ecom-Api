@@ -1,18 +1,16 @@
-from django.urls import path 
+from django.urls import path ,include
 from . import views
+from rest_framework.routers import DefaultRouter
 
-
+router = DefaultRouter()
+router.register(r'products', views.ProductViewSet)
 
 urlpatterns = [
-
-  path('products/', views.get_all_products, name='products' ),
+  path('products_list/', views.get_all_products, name='products' ),
+  path('', include(router.urls)),  
   path('products/new/', views.new_product,name='new_products'),
-  path('products/update/<str:pk>/', views.update_product,name='update_product'),
-  path('products/delete/<str:pk>/', views.delete_product,name='delete_product'),
-  path('products/<str:pk>/', views.get_product_by_id, name='get_by_id_product' ),
   path('products/<str:pk>/reviews/', views.create_review, name='create_review' ),
   path('products/<str:pk>/reviews/delete', views.delete_review, name='create_review' ),
-
 ]
 
 

@@ -13,6 +13,7 @@ from django.db.models import Avg
 from django.core.cache import cache
 from django.conf import settings
 from django.core.cache.backends.base import DEFAULT_TIMEOUT
+from rest_framework import viewsets
 # Create your views here.
 
 # Get timeout from settings if exsists
@@ -28,7 +29,6 @@ def get_all_products(request):
     paginator.page_size = respage
     queyrset =  paginator.paginate_queryset(filiterset.qs,request)
     serlizer =  ProductSerializer(queyrset,many=True) 
-    print('Data from DB')
     return Response(
                     {
                      "products":serlizer.data,
@@ -37,72 +37,22 @@ def get_all_products(request):
                      }
                      )
 
-@api_view(['GET'])
-def get_product_by_id(request, pk):
-    product_cache = cache.get(pk)
-    if product_cache:
-        product = product_cache
-    else:
-        product = get_object_or_404(Product, id=pk)
-        cache.set(pk, product, CACHE_TTL)
-    
-    serializer = ProductSerializer(product)
-    
-    return Response({
-        "product": serializer.data
-    })
-
+class ProductViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
  
 @api_view(['POST'])
-@permission_classes([IsAuthenticated,IsAdminUser])
+@permission_classes([IsAuthenticated])
 def new_product(request):
-    data = request.data
-    serializer = ProductSerializer(data = data)
-
+    serializer = ProductSerializer(data = request.data)
     if serializer.is_valid():
-        product = Product.objects.create(**data,user=request.user)
-        res = ProductSerializer(product,many=False)
- 
-        return Response({"product":res.data})
+        serializer.save()
+        return Response({"product":serializer.data})
     else:
         return Response(serializer.errors)
 
 
-
-@api_view(['PUT'])
-@permission_classes([IsAuthenticated])
-def update_product(request,pk):
-    product = get_object_or_404(Product,id=pk)
-    if product.user != request.user:
-        return Response(
-            {
-            "erorr":"Sorry you can not Update this product"
-            },
-            status=status.HTTP_403_FORBIDDEN)
-    # Update 
-    product.name = request.data['name']   
-    product.description = request.data['description']   
-    product.price = request.data['price']   
-    product.brand = request.data['brand']   
-    product.category = request.data['category']   
-    product.ratings = request.data['ratings']     
-    product.stock = request.data['stock']   
-    product.save()
-    serializer = ProductSerializer(product,many=False)
-
-    return Response({'product':serializer.data})
-
-
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated,IsAdminUser])
-def delete_product(request, pk):
-    product = get_object_or_404(Product, id=pk)
-    
-    if product.user != request.user:
-        return Response({"detail": "Not authorized to delete this product"}, status=status.HTTP_403_FORBIDDEN)
-    
-    product.delete()
-    return Response({'details':'The product is Deleted'},status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])

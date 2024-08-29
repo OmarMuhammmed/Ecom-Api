@@ -23,7 +23,11 @@ class CustomUserManager(BaseUserManager):
         return user
 
     
-    def create_superuser(self,user_name, email=None, password=None, **extra_fields):
+    def create_superuser(self, user_name, email=None, password=None, **extra_fields):
+        # Set default permissions for superuser
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
         
         # Create the user with the provided parameters
         user = self.create_user(
@@ -34,10 +38,6 @@ class CustomUserManager(BaseUserManager):
             password=password,
             **extra_fields
         )
-        # Set default permissions for superuser
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_active', True)
         
         # Set the password and save the user
         user.set_password(password)
@@ -55,6 +55,9 @@ class CustomUser(AbstractBaseUser):
     last_login = models.DateTimeField(auto_now_add=True)
     is_staff = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
+    is_superuser = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+      
     
     USERNAME_FIELD = 'user_name' # to login django dash 
 
@@ -62,10 +65,16 @@ class CustomUser(AbstractBaseUser):
     
     class Meta:
         verbose_name_plural = 'Users'
-    
 
+    def has_perm(self, perm, obj=None):
+        return True
+    
+    def has_module_perms(self, app_label):
+        return True
+    
     def __str__(self):
         return self.user_name
+
 
 class Profile(models.Model):
     user = models.OneToOneField(CustomUser, related_name='profile',on_delete= models.CASCADE)

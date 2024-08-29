@@ -11,47 +11,52 @@ from product.models import Product
 from django.core.cache import cache
 from django.conf import settings
 from django.core.cache.backends.base import DEFAULT_TIMEOUT
+from rest_framework.views import APIView
 # Create your views here.
 CACHE_TTL = getattr(settings, 'CACHE_TTL', DEFAULT_TIMEOUT)
 
 
+class ListAddOreders(APIView):
+    permission_classes = [IsAuthenticated] 
+    def get(self, request):
+        queryset = Order.objects.all()
+        serializer = OrderSerializer(queryset,many=True)
+        return Response(serializer.data)
+    def post(self, request):
+        serializer = OrderSerializer(data = request.data)
+        if serializer.is_valid():
+            serializer.save
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
 
-@permission_classes([IsAuthenticated])
-@api_view(['GET'])
-def get_orders(request):
-    orders = Order.objects.all()
-    serilzer = OrderSerializer(orders,many=True)
-    print('Data form DB')
-    return Response({
-        'orders':serilzer.data
-    })
 
-@permission_classes([IsAuthenticated])
-@api_view(['GET'])
-def get_order(request,pk):
-    order_cache = cache.get(pk)
-    if order_cache :
-        order = order_cache
-    else :   
+
+class ManageOrder(APIView):
+    # permission_classes =[IsAuthenticated]
+    def get(self, request, pk ) :
+        order_cache = cache.get(pk)
+        if order_cache :
+            order = order_cache
+        else :   
+            order = get_object_or_404(Order, pk=pk)
+            cache.set(pk, order, CACHE_TTL)
+        serilzer = OrderSerializer(order,many=False)
+        return Response({'order' : serilzer.data})
+    
+    def put(self, request, pk, format=None):
         order = get_object_or_404(Order, pk=pk)
-        cache.set(pk, order, CACHE_TTL)
-
-    serilzer = OrderSerializer(order,many=False)
-
-    return Response({
-        'order' : serilzer.data
-    })
-
-
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
-def delete_order(request,pk):
-    order = get_object_or_404(Order, pk=pk) 
-    order.delete()
-    return Response({'details': "order is deleted"})
-
-
-
+        serializer = OrderSerializer(order, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk, ):
+        order = get_object_or_404(Order, pk=pk)
+        order.delete()    
+        return Response(status=status.HTTP_204_NO_CONTENT)     
+    
+    
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated,IsAdminUser])
 def process_order(request,pk):
