@@ -33,6 +33,9 @@ class Review(models.Model):
     user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
     rating = models.IntegerField(default=0)
     comment = models.TextField(max_length=1000)
-    createAt = models.DateTimeField(auto_now_add=True)
+    create_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.product} taken {self.rating} from {self.user}"
 
     

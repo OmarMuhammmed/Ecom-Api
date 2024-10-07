@@ -12,11 +12,12 @@ from django.core.cache import cache
 from django.conf import settings
 from django.core.cache.backends.base import DEFAULT_TIMEOUT
 from rest_framework.views import APIView
+from cart.models import CartItem
 # Create your views here.
 CACHE_TTL = getattr(settings, 'CACHE_TTL', DEFAULT_TIMEOUT)
 
 
-class ListAddOreders(APIView):
+class OrderApiView(APIView):
     permission_classes = [IsAuthenticated] 
     def get(self, request):
         queryset = Order.objects.all()

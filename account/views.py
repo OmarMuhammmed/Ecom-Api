@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404, render
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from .models import CustomUser as User
-from django.contrib.auth.hashers import make_password # To Encryption password 
+from django.contrib.auth.hashers import make_password 
 from rest_framework import status
 from .serializers import SingUpSerializer,UserSerializer
 from rest_framework.permissions import IsAuthenticated
